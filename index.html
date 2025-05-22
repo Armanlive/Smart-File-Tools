@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Smart File Converter</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" href="image/D-Logo-Black.png" type="image/png">
+  <link rel="stylesheet" href="style.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.10.377/pdf.min.js"></script>
+  <script src="https://unpkg.com/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script src='https://unpkg.com/tesseract.js@v4.1.1/dist/tesseract.min.js'></script>
+  <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+</head>
+<body>
+  <div class="container">
+    <h1>📄 Smart File Tools</h1>
+    <div class="tabs">
+      <button onclick="showSection('merge')">Merge PDFs</button>
+      <button onclick="showSection('image')">Image to Excel</button>
+      <button onclick="showSection('pdf')">PDF to Excel</button>
+      <button onclick="showSection('xlsxtocsv')">XLSX/CSV to JSON</button>
+      <button onclick="showSection('Calculator')">Calculator</button>
+    </div>
+
+    <section id="merge" class="tool-section">
+      <h2>🔗 Merge PDFs</h2>
+      <input type="file" id="mergePDFs" multiple accept=".pdf">
+      <div class="buttons">
+        <button onclick="mergePDF()">Merge & Download</button>
+        <button onclick="addPDF()">Add Another PDF</button>
+        <button onclick="clearMerge()">Clear</button>
+      </div>
+    </section>
+
+    <div id="image" class="tool-section hidden">
+      <h2>🖼️ Image to Excel</h2>
+      <input type="file" id="imageInput" accept="image/*">
+      <button onclick="imageToExcel()">Convert & Download</button>
+      <button onclick="clearImage()">Clear</button>
+    </div>
+
+    <div id="pdf" class="tool-section hidden">
+      <h2>📄 PDF to Excel (Basic)</h2>
+      <input type="file" id="pdfInput" accept=".pdf">
+      <button onclick="pdfToExcel()">Extract & Download</button>
+      <button onclick="clearPdfToExcel()">Clear</button>
+    </div>
+
+    <div id="xlsxtocsv" class="tool-section hidden">
+      <h2>📊 XLSX/CSV to JSON Converter</h2>
+      <input type="file" id="fileInput" class="form-control" multiple accept=".xlsx,.xls,.csv">
+      <div class="buttons">
+        <button class="btn btn-custom me-2" onclick="convertFiles('csv')">Convert to CSV</button>
+        <button class="btn btn-custom" onclick="convertFiles('json')">Convert to JSON</button>
+        <button onclick="clearFileInput()">Clear</button>
+      </div>
+      <div id="output"></div>
+    </div>
+
+    <div id="Calculator" class="tool-section hidden">
+      <h2>🧮 Advanced Calculator</h2>
+      <input type="text" id="display" disabled />
+      <div class="buttons">
+        <button onclick="clearDisplay()">C</button>
+        <button onclick="backspace()">←</button>
+        <button onclick="append('%')">%</button>
+        <button onclick="append('/')">/</button>
+        <button onclick="append('7')">7</button>
+        <button onclick="append('8')">8</button>
+        <button onclick="append('9')">9</button>
+        <button onclick="append('*')">×</button>
+        <button onclick="append('4')">4</button>
+        <button onclick="append('5')">5</button>
+        <button onclick="append('6')">6</button>
+        <button onclick="append('-')">−</button>
+        <button onclick="append('1')">1</button>
+        <button onclick="append('2')">2</button>
+        <button onclick="append('3')">3</button>
+        <button onclick="append('+')">+</button>
+        <button onclick="append('0')" class="zero">0</button>
+        <button onclick="append('.')">.</button>
+        <button onclick="calculate()">=</button>
+      </div>
+    </div>
+  </div>
+
+  <footer style="text-align: center; margin-top: 20px;">
+    <p>&copy; 2025 Arman Khan. All rights reserved.</p>
+  </footer> 
+
+  <script src="libs/pdf-lib.min.js"></script>
+  <script src="libs/xlsx.full.min.js"></script>
+  <script src="libs/tesseract.min.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>

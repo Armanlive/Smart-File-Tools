@@ -19,6 +19,7 @@
       <button onclick="showSection('image')">Image to Excel</button>
       <button onclick="showSection('pdf')">PDF to Excel</button>
       <button onclick="showSection('xlsxtocsv')">XLSX/CSV to JSON</button>
+      <button onclick="showSection('Consolidate')">Consolidate Data</button>
       <button onclick="showSection('Calculator')">Calculator</button>
     </div>
 
@@ -55,6 +56,13 @@
         <button onclick="clearFileInput()">Clear</button>
       </div>
       <div id="output"></div>
+    </div>
+
+    <div id="Consolidate" class="tool-section hidden">
+      <h2>📊 Consolidate Data</h2>
+      <input type="file" id="consolidateInput" webkitdirectory directory multiple accept=".xlsx,.xls,.csv">
+      <button onclick="consolidateData()">Consolidate & Download</button>
+      <button onclick="clearConsolidate()">Clear</button>
     </div>
 
     <div id="Calculator" class="tool-section hidden">

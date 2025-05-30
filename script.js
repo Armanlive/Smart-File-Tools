@@ -470,6 +470,14 @@ function downloadFile(data, filename, mime) {
   link.click();
 }
 
+function clearConsolidate() {
+  const input = document.getElementById('consolidateInput');
+  if (input) {
+    input.value = '';
+  }
+  showAlert('All consolidated files cleared');
+}
+
 function consolidateData() {
   const input = document.getElementById('consolidateInput');
   const files = Array.from(input.files);

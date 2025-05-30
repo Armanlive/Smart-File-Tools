@@ -469,3 +469,95 @@ function downloadFile(data, filename, mime) {
   link.download = filename;
   link.click();
 }
+
+function consolidateData() {
+  const input = document.getElementById('consolidateInput');
+  const files = Array.from(input.files);
+  if (!files.length) {
+    showAlert('Please select a folder with Excel/CSV files.', 'error');
+    return;
+  }
+
+  showAlert('Processing...');
+
+  // Group files by their immediate subfolder
+  const folderMap = {};
+  files.forEach(file => {
+    // Get subfolder name (first part after root)
+    const path = file.webkitRelativePath || file.name;
+    const parts = path.split('/');
+    // If files are in root, skip (we want only subfolders)
+    if (parts.length < 2) return;
+    const subfolder = parts[1];
+    if (!folderMap[subfolder]) folderMap[subfolder] = [];
+    folderMap[subfolder].push(file);
+  });
+
+  // For each subfolder, consolidate its files
+  const consolidateFolder = async (folderName, folderFiles) => {
+    let masterHeader = null;
+    let consolidatedRows = [];
+    let headerSet = false;
+
+    const processFile = (file) => {
+      return new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onload = function (e) {
+          let workbook;
+          const data = new Uint8Array(e.target.result);
+          try {
+            workbook = XLSX.read(data, { type: 'array' });
+          } catch {
+            return resolve(); // skip unreadable files
+          }
+          workbook.SheetNames.forEach((sheetName) => {
+            const sheet = workbook.Sheets[sheetName];
+            const rows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' });
+            if (!rows.length) return;
+            if (!headerSet) {
+              masterHeader = rows[0];
+              consolidatedRows.push(masterHeader);
+              headerSet = true;
+            }
+            // For all but the first file/sheet, skip header row
+            const dataRows = headerSet ? rows.slice(1) : rows;
+            // Only keep rows where length matches header, and map to header order
+            dataRows.forEach(row => {
+              // Map row to master header order
+              const mappedRow = masterHeader.map((h, idx) => row[idx] !== undefined ? row[idx] : '');
+              if (mappedRow.length === masterHeader.length) {
+                consolidatedRows.push(mappedRow);
+              }
+            });
+          });
+          resolve();
+        };
+        reader.readAsArrayBuffer(file);
+      });
+    };
+
+    for (const file of folderFiles) {
+      const ext = file.name.split('.').pop().toLowerCase();
+      if (['xlsx', 'xls', 'csv'].includes(ext)) {
+        await processFile(file);
+      }
+    }
+    if (!masterHeader) {
+      showAlert(`No valid Excel/CSV data found in ${folderName}.`, 'error');
+      return;
+    }
+    // Create workbook and save
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.aoa_to_sheet(consolidatedRows);
+    XLSX.utils.book_append_sheet(wb, ws, 'Consolidated');
+    XLSX.writeFile(wb, `${folderName}_consolidated.xlsx`);
+  };
+
+  (async () => {
+    for (const [folderName, folderFiles] of Object.entries(folderMap)) {
+      await consolidateFolder(folderName, folderFiles);
+    }
+    showAlert('All folders consolidated!', 'info');
+  })();
+}
+

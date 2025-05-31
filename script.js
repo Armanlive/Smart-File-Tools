@@ -4,16 +4,29 @@ function showSection(sectionId) {
   document.getElementById(sectionId).classList.remove('hidden');
 }
 
-// Styled alert function
-function showAlert(message, type = 'info') {
-  const alertDiv = document.createElement('div');
-  alertDiv.className = `custom-alert ${type}`;
+// Show alert message at the top of the page
+function showAlert(message) {
+  let alertDiv = document.getElementById('custom-alert');
+  if (!alertDiv) {
+    alertDiv = document.createElement('div');
+    alertDiv.id = 'custom-alert';
+    alertDiv.style.position = 'fixed';
+    alertDiv.style.top = '18px';
+    alertDiv.style.left = '50%';
+    alertDiv.style.transform = 'translateX(-50%)';
+    alertDiv.style.background = 'linear-gradient(90deg, #4f8cff 0%, #a770ef 100%)';
+    alertDiv.style.color = '#fff';
+    alertDiv.style.padding = '12px 28px';
+    alertDiv.style.borderRadius = '8px';
+    alertDiv.style.fontSize = '1em';
+    alertDiv.style.fontWeight = '600';
+    alertDiv.style.zIndex = '1000';
+    alertDiv.style.boxShadow = '0 2px 12px rgba(80,80,160,0.18)';
+    document.body.appendChild(alertDiv);
+  }
   alertDiv.textContent = message;
-  document.body.appendChild(alertDiv);
-  
-  setTimeout(() => {
-      alertDiv.remove();
-  }, 3000);
+  alertDiv.style.display = 'block';
+  setTimeout(() => { alertDiv.style.display = 'none'; }, 1800);
 }
 
 // PDF Merge Functions
@@ -569,3 +582,165 @@ function consolidateData() {
   })();
 }
 
+
+// Toggle preview state
+let emlPreviewVisible = false;
+
+function cleanEmlBody(raw) {
+  // Remove <div dir="ltr"> and </div>
+  let cleaned = raw.replace(/<div[^>]*>/gi, '').replace(/<\/div>/gi, '');
+  // Remove =3D artifacts and decode quoted-printable soft line breaks
+  cleaned = cleaned.replace(/=3D/g, '=').replace(/=\r?\n/g, '');
+  // Remove other HTML tags
+  cleaned = cleaned.replace(/<[^>]+>/g, '');
+  return cleaned.trim();
+}
+
+document.getElementById('emlUpload').addEventListener('change', loadEMLFile);
+document.getElementById('emlAttachments').addEventListener('change', function() {
+  const files = Array.from(this.files).map(f => f.name);
+  this.setAttribute('data-filenames', files.join(', '));
+  if (files.length) showAlert('Upload Attachment file successfully!');
+});
+
+function loadEMLFile(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const text = e.target.result;
+    const getHeader = (header) => {
+      const match = text.match(new RegExp('^' + header + ':(.*)$', 'mi'));
+      return match ? match[1].trim() : '';
+    };
+    document.getElementById('emlFrom').value = getHeader('From');
+    document.getElementById('emlTo').value = getHeader('To');
+    document.getElementById('emlSubject').value = getHeader('Subject');
+    document.getElementById('emlDate').value = getHeader('Date');
+    let body = '';
+    let htmlMatch = text.match(/Content-Type:\s*text\/html[^]*?\r?\n\r?\n([^]*?)(?:\r?\n--|$)/i);
+    if (htmlMatch) {
+      body = cleanEmlBody(htmlMatch[1]);
+    } else {
+      let plainMatch = text.match(/Content-Type:\s*text\/plain[^]*?\r?\n\r?\n([^]*?)(?:\r?\n--|$)/i);
+      if (plainMatch) {
+        body = cleanEmlBody(plainMatch[1]);
+      } else {
+        body = cleanEmlBody(text.split(/\r?\n\r?\n/)[1] || '');
+      }
+    }
+    document.getElementById('emlBody').value = body;
+    // Attachments from EML
+    const attachments = [];
+    const attachmentRegex = /Content-Disposition:\s*attachment;\s*filename="([^"]+)"/gi;
+    let match;
+    while ((match = attachmentRegex.exec(text)) !== null) {
+      attachments.push(match[1]);
+    }
+    document.getElementById('emlAttachments').setAttribute('data-filenames', attachments.join(', '));
+    emlPreviewVisible = false;
+    showAlert('Upload EML file successfully!');
+    previewEML(true);
+  };
+  reader.readAsText(file);
+}
+
+function previewEML(forceShow = false) {
+  const previewDiv = document.getElementById('emlPreview');
+  if (!forceShow && emlPreviewVisible) {
+    previewDiv.innerHTML = '';
+    emlPreviewVisible = false;
+    showAlert('Hide EML preview!');
+    return;
+  }
+  const from = document.getElementById('emlFrom').value;
+  const to = document.getElementById('emlTo').value;
+  const subject = document.getElementById('emlSubject').value;
+  const date = document.getElementById('emlDate').value;
+  const body = document.getElementById('emlBody').value;
+  const attachments = document.getElementById('emlAttachments').getAttribute('data-filenames') || '';
+  const attachmentsHtml = attachments
+    ? `<div style="margin-top:10px;"><strong>Attachments:</strong> ${attachments.split(', ').map(f => `<span style="background:#eee;padding:2px 8px;border-radius:4px;margin-right:6px;">${f}</span>`).join('')}</div>`
+    : '';
+  const preview = `
+    <div class="header" style="background:#666;color:#fff;padding:14px 14px 8px 14px;border-radius:10px 10px 0 0;">
+      <div style="font-size:1.1em;font-weight:600;margin-bottom:6px;">${subject}</div>
+      <div style="display:flex;align-items:center;gap:10px;">
+        <div style="background:#bbb;color:#fff;width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:1em;">
+          ${from ? from[0].toUpperCase() : '?'}
+        </div>
+        <div>
+          <div style="font-weight:600;">${from}</div>
+          <div style="font-size:0.93em;color:#eee;">To ${to}</div>
+        </div>
+        <div style="margin-left:auto;font-size:0.93em;color:#eee;">${date}</div>
+      </div>
+      ${attachmentsHtml}
+    </div>
+    <div class="body" style="background:#fff;padding:16px;border-radius:0 0 10px 10px;color:#222;">
+      ${body.replace(/\n/g, '<br>')}
+    </div>
+  `;
+  previewDiv.innerHTML = preview;
+  emlPreviewVisible = true;
+  showAlert('Preview EML successfully!');
+}
+
+function downloadEML() {
+  const from = document.getElementById('emlFrom').value;
+  const to = document.getElementById('emlTo').value;
+  const subject = document.getElementById('emlSubject').value;
+  const date = document.getElementById('emlDate').value;
+  const body = document.getElementById('emlBody').value;
+  const emlContent =
+    `From: ${from}\r\nTo: ${to}\r\nSubject: ${subject}\r\nDate: ${date}\r\n\r\n${body}`;
+  const blob = new Blob([emlContent], { type: 'message/rfc822' });
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  link.download = 'email.eml';
+  link.click();
+  showAlert('Download EML file successfully!');
+}
+
+function convertEMLtoPDF() {
+  previewEML(true); // Ensure preview is visible and up to date
+  const previewDiv = document.getElementById('emlPreview');
+  if (!previewDiv || !previewDiv.innerHTML.trim()) {
+    showAlert('Nothing to convert. Please preview the EML first.', 'error');
+    return;
+  }
+  // Ensure jsPDF and html2canvas are available
+  const jsPDFConstructor = window.jspdf ? window.jspdf.jsPDF : window.jsPDF;
+  if (!jsPDFConstructor || typeof html2canvas === 'undefined') {
+    showAlert('jsPDF or html2canvas is not loaded.', 'error');
+    return;
+  }
+  const doc = new jsPDFConstructor({
+    orientation: 'p',
+    unit: 'pt',
+    format: 'a4'
+  });
+  doc.html(previewDiv, {
+    callback: function (doc) {
+      doc.save('email.pdf');
+      showAlert('Convert to PDF EML file successfully!');
+    },
+    x: 20,
+    y: 20,
+    html2canvas: { scale: 0.7 }
+  });
+}
+
+function clearEMLEditor() {
+  document.getElementById('emlUpload').value = '';
+  document.getElementById('emlFrom').value = '';
+  document.getElementById('emlTo').value = '';
+  document.getElementById('emlSubject').value = '';
+  document.getElementById('emlDate').value = '';
+  document.getElementById('emlBody').value = '';
+  document.getElementById('emlAttachments').value = '';
+  document.getElementById('emlAttachments').setAttribute('data-filenames', '');
+  document.getElementById('emlPreview').innerHTML = '';
+  emlPreviewVisible = false;
+  showAlert('Clear successfully!');
+}

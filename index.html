@@ -10,6 +10,7 @@
   <script src="https://unpkg.com/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <script src='https://unpkg.com/tesseract.js@v4.1.1/dist/tesseract.min.js'></script>
   <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </head>
 <body>
   <div class="container">
@@ -20,6 +21,7 @@
       <button onclick="showSection('pdf')">PDF to Excel</button>
       <button onclick="showSection('xlsxtocsv')">XLSX/CSV to JSON</button>
       <button onclick="showSection('Consolidate')">Consolidate Data</button>
+      <button onclick="showSection('eml-editor')">EML File Creator</button>
       <button onclick="showSection('Calculator')">Calculator</button>
     </div>
 
@@ -64,6 +66,25 @@
       <button onclick="consolidateData()">Consolidate & Download</button>
       <button onclick="clearConsolidate()">Clear</button>
     </div>
+
+    <div id="eml-editor" class="tool-section hidden">
+    <h2 style="font-size:1.1em;margin-bottom:8px;">📧 EML File Editor & Preview</h2>
+    <label>Upload EML: <input type="file" id="emlUpload" accept=".eml" onchange="loadEMLFile(event)"></label>
+    <label>From: <input type="text" id="emlFrom"></label>
+    <label>To: <input type="text" id="emlTo"></label>
+    <label>Subject: <input type="text" id="emlSubject"></label>
+    <label>Date: use this format Sat 18-05-2024 5.06 PM <input type="text" id="emlDate"></label>
+    <label>Body:</label>
+    <textarea id="emlBody" rows="8"></textarea>
+    <label>Attachments: <input type="file" id="emlAttachments" multiple></label>
+    <div class="buttons">
+      <button onclick="previewEML()">Preview</button>
+      <button onclick="downloadEML()">Download EML</button>
+      <button onclick="convertEMLtoPDF()">Convert to PDF</button>
+      <button onclick="clearEMLEditor()">Clear</button>
+    </div>
+    <div id="emlPreview" class="eml-preview"></div>
+  </div>
 
     <div id="Calculator" class="tool-section hidden">
       <h2>🧮 Advanced Calculator</h2>
